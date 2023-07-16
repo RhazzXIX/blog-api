@@ -2,7 +2,11 @@ import mongoose from "mongoose";
 
 const Schema = mongoose.Schema;
 
-const postSchema = new Schema<IPost>({
+const postContentSchema = new Schema<IPostContent>({
+  headerImgUrl: {
+    type: String,
+    required: false,
+  },
   title: {
     type: String,
     required: true,
@@ -11,10 +15,10 @@ const postSchema = new Schema<IPost>({
     type: String,
     required: true,
   },
-  date: {
-    type: Date,
-    required: true,
-  },
+});
+
+const postSchema = new Schema<IPost>({
+  content: [postContentSchema],
   isPublished: {
     type: Boolean,
     required: true,
