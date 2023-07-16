@@ -10,10 +10,16 @@ declare global {
 }
 
 declare global {
-  interface IPost {
+  interface IPostContent {
+    headerImgUrl?: string;
     title: string;
     text: string;
-    date: Date;
+  }
+}
+
+declare global {
+  interface IPost {
+    content: IPostContent[];
     isPublished: boolean;
     publishedDate?: Date;
     author: Types.ObjectId;
