@@ -25,3 +25,12 @@ declare global {
     author: Types.ObjectId;
   }
 }
+
+declare global {
+  interface IComment {
+    text: string;
+    date: Date;
+    commenter: Types.ObjectId;
+    blogPost: Types.ObjectId;
+  }
+}
