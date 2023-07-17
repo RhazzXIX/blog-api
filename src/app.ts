@@ -7,6 +7,7 @@ import "dotenv/config";
 import mongoose, { ConnectOptions } from "mongoose";
 import indexRouter from "./routes/index";
 import usersRouter from "./routes/users";
+import "./custom-types/types";
 
 // Create App.
 const app = express();
@@ -15,7 +16,7 @@ const app = express();
 const mongoDB = process.env.DB_URL;
 
 const main = async () => {
-  if (typeof mongoDB === 'string') {
+  if (typeof mongoDB === "string") {
     await mongoose.connect(mongoDB, {
       useUnifiedTopology: true,
       useNewUrlParser: true,

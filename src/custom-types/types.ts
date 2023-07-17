@@ -1,36 +1,32 @@
-import { Types } from "mongoose";
+/* eslint-disable @typescript-eslint/no-namespace */
+
+import { Types, Document } from "mongoose";
 
 declare global {
-  interface IUser {
+  interface IUser extends Document {
     name: string;
     password: string;
     isAuthor?: boolean;
     email: string;
   }
-}
-
-declare global {
-  interface IPostContent {
+  interface IPostContent extends Document {
     headerImgUrl?: string;
     title: string;
     text: string;
   }
-}
-
-declare global {
-  interface IPost {
+  interface IPost extends Document {
     content: IPostContent[];
     isPublished: boolean;
     publishedDate?: Date;
     author: Types.ObjectId;
   }
-}
-
-declare global {
-  interface IComment {
+  interface IComment extends Document {
     text: string;
     date: Date;
     commenter: Types.ObjectId;
-    blogPost: Types.ObjectId
+    blogPost: Types.ObjectId;
+  }
+  namespace Express {
+    interface User extends IUser {}
   }
 }
