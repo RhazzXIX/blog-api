@@ -31,6 +31,6 @@ declare global {
     text: string;
     date: Date;
     commenter: Types.ObjectId;
-    blogPost: Types.ObjectId;
+    blogPost: Types.ObjectId
   }
 }
