@@ -7,7 +7,9 @@ import "dotenv/config";
 import mongoose, { ConnectOptions } from "mongoose";
 import indexRouter from "./routes/index";
 import usersRouter from "./routes/users";
+import passport from "passport";
 import "./custom-types/types";
+import "./config/authorization";
 
 // Create App.
 const app = express();
@@ -36,7 +38,8 @@ app.set("view engine", "ejs");
 // App setup.
 app.use(logger("dev"));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// Session and authorization setup
 app.use(
   session({
     secret: process.env.SECRET_KEY || "No secret",
@@ -44,6 +47,10 @@ app.use(
     saveUninitialized: true,
   })
 );
+
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(express.urlencoded({ extended: false }));
 
 // Static files.
 app.use(express.static(path.join(__dirname, "public")));
