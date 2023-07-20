@@ -3,8 +3,8 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const postContentSchema = new Schema<IPostContent>({
-  headerImgUrl: {
-    type: String,
+  headerImg: {
+    type: Buffer,
     required: false,
   },
   title: {
@@ -32,6 +32,7 @@ const postSchema = new Schema<IPost>({
     ref: "user",
     required: true,
   },
+  totalComments: { type: Number, required: true },
 });
 
 const postModel = mongoose.model<IPost>("post", postSchema);

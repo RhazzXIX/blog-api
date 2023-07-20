@@ -10,7 +10,7 @@ declare global {
     email: string;
   }
   interface IPostContent extends Document {
-    headerImgUrl?: string;
+    headerImg?: Buffer;
     title: string;
     text: string;
   }
@@ -19,6 +19,7 @@ declare global {
     isPublished: boolean;
     publishedDate?: Date;
     author: Types.ObjectId;
+    totalComments: number;
   }
   interface IComment extends Document {
     text: string;
