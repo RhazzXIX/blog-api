@@ -5,7 +5,7 @@ import session from "express-session";
 import logger from "morgan";
 import "dotenv/config";
 import mongoose, { ConnectOptions } from "mongoose";
-import indexRouter from "./routes/index";
+import postRouter from "./routes/post";
 import usersRouter from "./routes/users";
 import passport from "passport";
 import "./custom-types/types";
@@ -56,8 +56,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 
 // Routes setup.
-app.use("/", indexRouter);
 app.use("/users", usersRouter);
+app.use("/posts", postRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
