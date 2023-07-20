@@ -6,6 +6,7 @@ import passport, { AuthenticateCallback } from "passport";
 import { Handler } from "express";
 
 const userController = {
+  // Middleware for user sign-up.
   userSignUp: [
     // Validate and sanitize user input.
     body("username", "Username should have at least 3 characters.")
@@ -61,12 +62,13 @@ const userController = {
             message: "User created.",
             id: user._id,
             username: user.name,
-            password,
+            isAuthor: user.isAuthor,
           });
         });
       }
     }),
   ],
+  // Middleware for user log in.
   userLogin: [
     // Validate and sanitize user input
     body("username", "Username should have at least 3 characters.")
@@ -106,9 +108,32 @@ const userController = {
     }),
     function (req, res, next) {
       if (req.user)
-        res.status(200).json({ message: `User ${req.user.name} Logged in` });
+        res.status(200).json({
+          message: `User ${req.user.name} Logged in`,
+          userInfo: {
+            id: req.user._id,
+            name: req.user.name,
+            isAuthor: req.user.isAuthor,
+          },
+        });
     } as Handler,
   ],
+  // Middleware for fetching user info.
+  userInfo: asyncHandler(async function (req, res, next) {
+    console.log(req.user);
+    // Check if logged in user and if user id and parameters match.
+    if (req.user && req.user._id.toString() === req.params.userId.toString()) {
+      // Fetch data from database.
+      const user = await User.findById(req.params.userId)
+        .select("name isAuthor")
+        .exec();
+      // Send Data
+      res.status(200).json(user);
+    } else {
+      // Send error if user is not logged in and the Id does not match.
+      res.status(401).send("Unauthorized Request");
+    }
+  }),
 };
 
 export default userController;
