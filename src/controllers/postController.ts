@@ -11,24 +11,28 @@ const postController = {
   blogPosts: asyncHandler(async function (req, res, next) {
     // Fetch posts
     let posts: IPost[];
-    // Check if the user the author.
+
+    // Fetch all post if the user is an Author.
     if (req.user && req.user.isAuthor) {
-      // Fetch all posts.
       posts = await Post.find()
         .populate({ path: "author", select: "name" })
         .lean()
         .exec();
-    } else {
+
       // Fetch only published posts.
+    } else {
       posts = await Post.find({ isPublished: true })
         .populate({ path: "author", select: "name" })
         .sort({ publishedData: -1 })
         .lean()
         .exec();
     }
+
+    // Send posts data.
     if (posts.length > 0) {
-      // Send posts data.
       res.status(200).json(posts);
+
+      // Send info that there are no post yet.
     } else {
       res.status(404).json({ message: "There are no posts yet." });
     }
@@ -41,6 +45,30 @@ const postController = {
       const post = res.locals.post;
       // Send post.
       res.status(200).json(post);
+    }),
+  ],
+
+  // Middleware for getting comment list.
+  blogPostComments: [
+    verifyUserAuthority,
+    asyncHandler(async function (req, res, next) {
+      // Get post.
+      const post = res.locals.post;
+
+      // Fetch comments.
+      const comments = await Comment.find({ blogPost: post._id })
+        .populate({ path: "commenter", select: "name" })
+        .lean()
+        .exec();
+
+      // Send comment list.
+      if (comments.length > 0) {
+        res.status(200).json(comments);
+
+        // Send info if there are not comments yet.
+      } else {
+        res.status(404).json({ message: "There are no comments yet." });
+      }
     }),
   ],
 };

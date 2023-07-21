@@ -6,6 +6,9 @@ const router = express.Router();
 router.get("/", postController.blogPosts);
 
 // GET a single post
-router.get('/:postId', postController.blogPost)
+router.get("/:postId", postController.blogPost);
+
+// GET all comments from a blog post
+router.get("/:postId/comments", postController.blogPostComments);
 
 export default router;
