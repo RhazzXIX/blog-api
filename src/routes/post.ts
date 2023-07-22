@@ -5,6 +5,9 @@ const router = express.Router();
 /* GET all posts */
 router.get("/", postController.blogPosts);
 
+// POST a blog post
+router.post("/", postController.createBlogPost);
+
 // GET a single post
 router.get("/:postId", postController.blogPost);
 
