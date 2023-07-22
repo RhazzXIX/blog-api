@@ -7,8 +7,8 @@ import {
   validationResult,
 } from "express-validator";
 import mongoose from "mongoose";
-import verifyUserAuthority from "../assists/middlewares/verifyUserAuthority";
-import { Handler } from "express";
+import verifyUnpublishedAccess from "../assists/middlewares/verifyUnpublishedAccess";
+import verifyIfAuthor from "../assists/middlewares/verifyIfAuthor";
 
 const postController = {
   // Middleware for getting all blog posts.
@@ -44,7 +44,7 @@ const postController = {
 
   // Middleware for getting a single post.
   blogPost: [
-    verifyUserAuthority,
+    verifyUnpublishedAccess,
     asyncHandler(async function (req, res, next) {
       const post = res.locals.post;
       // Send post.
@@ -54,13 +54,7 @@ const postController = {
 
   // Middleware for creating a blog post.
   createBlogPost: [
-    function (req, res, next) {
-      // Check if the user is an author.
-      if (req.user && req.user.isAuthor) return next();
-
-      // Throw Unauthorized if not.
-      res.status(401).send("Unauthorized for access.");
-    } as Handler,
+    verifyIfAuthor,
     // Validate and sanitize.
     body("headerImg1").escape(),
     body("title1", "Title should have at least 3 characters.")
@@ -174,7 +168,7 @@ const postController = {
 
   // Middleware for getting comment list.
   blogPostComments: [
-    verifyUserAuthority,
+    verifyUnpublishedAccess,
     asyncHandler(async function (req, res, next) {
       // Get post.
       const post = res.locals.post;

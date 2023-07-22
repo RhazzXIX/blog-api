@@ -3,7 +3,7 @@ import Post from "../../models/post";
 import asyncHandler from "express-async-handler";
 import mongoose from "mongoose";
 
-const verifyUserAuthority = asyncHandler(async function (req, res, next) {
+const verifyUnpublishedAccess = asyncHandler(async function (req, res, next) {
   // Get post id.
   const { postId } = req.params;
   // check if valid req.
@@ -44,4 +44,4 @@ const verifyUserAuthority = asyncHandler(async function (req, res, next) {
   }
 } as Handler);
 
-export default verifyUserAuthority;
+export default verifyUnpublishedAccess;
