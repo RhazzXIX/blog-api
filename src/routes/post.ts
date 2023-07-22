@@ -11,6 +11,9 @@ router.post("/", postController.createBlogPost);
 // GET a single post
 router.get("/:postId", postController.blogPost);
 
+// DELETE a single post.
+router.delete("/:postId", postController.deleteBlogPost);
+
 // GET all comments from a blog post
 router.get("/:postId/comments", postController.blogPostComments);
 

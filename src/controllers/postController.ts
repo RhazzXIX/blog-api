@@ -166,6 +166,31 @@ const postController = {
     }),
   ],
 
+  // Delete a blogPost
+  deleteBlogPost: [
+    verifyIfAuthor,
+    asyncHandler(async function (req, res, next) {
+      const { postId } = req.params;
+      // Verify if correct id.
+      if (mongoose.isValidObjectId(postId)) {
+        // Fetch and delete blog post.
+        const deletedPost = await Post.findByIdAndDelete(postId).exec();
+        if (deletedPost) {
+          // Send post if successfully deleted.
+          res.status(200).json({
+            message: `Deleted "${deletedPost.content[0].title}"`,
+          });
+        } else {
+          // Send a not found error.
+          res.status(404).json({ message: "Post not found." });
+        }
+      } else {
+        // Send a not found error.
+        res.status(404).json({ message: "Post not found." });
+      }
+    }),
+  ],
+
   // Middleware for getting comment list.
   blogPostComments: [
     verifyUnpublishedAccess,
