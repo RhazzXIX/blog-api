@@ -1,14 +1,11 @@
 import Post from "../models/post";
 import Comment from "../models/comment";
 import asyncHandler from "express-async-handler";
-import {
-  FieldValidationError,
-  body,
-  validationResult,
-} from "express-validator";
 import mongoose from "mongoose";
 import verifyUnpublishedAccess from "../assists/middlewares/verifyUnpublishedAccess";
 import verifyIfAuthor from "../assists/middlewares/verifyIfAuthor";
+import validate from "../assists/middlewares/validate";
+import checkValidation from "../assists/middlewares/checkValidation";
 
 const postController = {
   // Middleware for getting all blog posts.
@@ -56,52 +53,11 @@ const postController = {
   createBlogPost: [
     verifyIfAuthor,
     // Validate and sanitize.
-    body("headerImg1").escape(),
-    body("title1", "Title should have at least 3 characters.")
-      .trim()
-      .isLength({ min: 3 })
-      .escape(),
-    body("body1", "Body should have at least 10 characters.")
-      .trim()
-      .isLength({ min: 10 })
-      .escape(),
-    body("headerImg2").optional().escape(),
-    body("title2", "Sub header should have at least 3 characters.")
-      .optional()
-      .trim()
-      .isLength({ min: 3 })
-      .escape(),
-    body("body2", "Body should have at least 10 characters.")
-      .if(body("title2").notEmpty())
-      .trim()
-      .isLength({ min: 10 })
-      .escape(),
-    body("headerImg3").optional().escape(),
-    body("title3", "Second sub header should have at least 3 characters.")
-      .optional()
-      .trim()
-      .isLength({ min: 3 })
-      .escape(),
-    body("body3", "Body should have at least 10 characters.")
-      .if(body("title3").notEmpty())
-      .trim()
-      .isLength({ min: 10 })
-      .escape(),
-    body("headerImg4").optional().escape(),
-    body("title4", "Third sub header should have at least 3 characters.")
-      .optional()
-      .trim()
-      .isLength({ min: 3 })
-      .escape(),
-    body("body4", "Body should have at least 10 characters.")
-      .if(body("title4").notEmpty())
-      .trim()
-      .isLength({ min: 10 })
-      .escape(),
+    ...validate.post,
+    checkValidation,
+
     // Handle Create blog post req.
     asyncHandler(async function (req, res, next) {
-      // Get validation errors
-      const errors = validationResult(req);
       // Container for content
       const content: IPostContent[] = [];
 
@@ -125,48 +81,30 @@ const postController = {
         isPublished: false,
         totalComments: 0,
       });
-
-      // If there are no validation errors. Create blog post
-      if (errors.isEmpty()) {
-        // Save the post.
-        blogPost
-          .save()
-          // If saving the document is successful.
-          .then(async () => {
-            // Populate Author.
-            await blogPost.populate({
-              path: "author",
-              select: "name",
-            });
-
-            // Send response if success.
-            res.status(201).json(blogPost);
-          })
-          // If there are errors.
-          .catch(async () => {
-            // Delete the said post for preventing bloating the database.
-            await Post.findByIdAndDelete(blogPost._id);
-
-            // Send error if there are problems with the saving to database
-            res.status(500).json({ message: "Internal server error" });
+      // Save the post.
+      blogPost
+        .save()
+        // If saving the document is successful.
+        .then(async () => {
+          // Populate Author.
+          await blogPost.populate({
+            path: "author",
+            select: "name",
           });
-      } else {
-        res.status(400).json({
-          errors: errors.array().map((error) => {
-            console.log(error);
-            const {
-              value: entry,
-              msg: message,
-              path: field,
-            } = error as FieldValidationError;
-            return { message, entry, field };
-          }),
+
+          // Send response if success.
+          res.status(201).json(blogPost);
+        })
+        // If there are errors.
+        .catch(async (err) => {
+          // Delete the said post for preventing bloating the database.
+          await Post.findByIdAndDelete(blogPost._id);
+          next(err);
         });
-      }
     }),
   ],
 
-  // Delete a blogPost
+  // Delete a blog post
   deleteBlogPost: [
     verifyIfAuthor,
     asyncHandler(async function (req, res, next) {
