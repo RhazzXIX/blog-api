@@ -103,6 +103,62 @@ const postController = {
         });
     }),
   ],
+  // Update a blog post.
+  updateBlogPost: [
+    verifyIfAuthor,
+    ...validate.post,
+    checkValidation,
+    // Handle Update blog post request.
+    asyncHandler(async function (req, res, next) {
+      const { postId } = req.params;
+
+      // Check if valid mongoose id.
+      if (mongoose.isValidObjectId(postId) === false) {
+        res.status(404).send("Post not found.");
+        return;
+      }
+
+      // Container for updated content
+      const updatedContent: IPostContent[] = [];
+
+      // Loop at the req.body
+      for (let i = 1; i <= 4; i++) {
+        // Check if there are entries
+        if (req.body[`title${i}`]) {
+          // Push entries for saving to database.
+          updatedContent.push({
+            headerImg: req.body[`headerImg${i}`] || undefined,
+            title: req.body[`title${i}`],
+            text: req.body[`body${i}`],
+          } as IPostContent);
+        }
+      }
+
+      // Create a document for updating post.
+      const blogPost = new Post({
+        _id: postId,
+        content: updatedContent,
+      });
+
+      // Query database and update.
+      const updateBlogPost = await Post.findByIdAndUpdate(
+        postId,
+        blogPost,
+        {}
+      ).exec();
+
+      // If blog post is found send info to client.
+      if (updateBlogPost) {
+        res.status(201).json({
+          id: updateBlogPost._id,
+          updateFrom: updateBlogPost.content,
+          updateTo: blogPost.content,
+        });
+      } else {
+        res.status(404).send("Blog post not found.");
+      }
+    }),
+  ],
 
   // Delete a blog post
   deleteBlogPost: [
