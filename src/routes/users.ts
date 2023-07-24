@@ -3,10 +3,7 @@ import userController from "../controllers/userController";
 const router = express.Router();
 
 // API for user sign-up.
-router.post("/sign-up", userController.userSignUp);
-
-// API for user log in.
-router.post("/log-in", userController.userLogin);
+router.post("/", userController.userSignUp);
 
 // API for user info
 router.get("/:userId", userController.userInfo);

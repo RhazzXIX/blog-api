@@ -124,9 +124,9 @@ const userController = {
   // Middleware for fetching user info.
   userInfo: asyncHandler(async function (req, res, next) {
     // Check if logged in user and if user id and parameters match.
-    if (req.user && req.user._id.toString() === req.params.userId.toString()) {
+    if (req.user) {
       // Fetch data from database.
-      const user = await User.findById(req.params.userId)
+      const user = await User.findById(req.user.id)
         .select("name isAuthor")
         .exec();
 
@@ -135,7 +135,7 @@ const userController = {
 
       // Send error if user is not logged in and the Id does not match.
     } else {
-      res.status(401).send("Unauthorized Request");
+      res.status(403).send("Forbidden request.");
     }
   }),
 

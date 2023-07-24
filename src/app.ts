@@ -7,6 +7,7 @@ import "dotenv/config";
 import mongoose, { ConnectOptions } from "mongoose";
 import postRouter from "./routes/post";
 import usersRouter from "./routes/users";
+import sessionRouter from "./routes/session";
 import passport from "passport";
 import "./custom-types/types";
 import "./config/authorization";
@@ -58,6 +59,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // Routes setup.
 app.use("/users", usersRouter);
 app.use("/posts", postRouter);
+app.use("/session", sessionRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
