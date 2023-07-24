@@ -1,13 +1,13 @@
 import { Handler } from "express";
 import Post from "../../models/post";
 import asyncHandler from "express-async-handler";
-import mongoose from "mongoose";
+import verifyIdInvalid from "../functions/verifyIdInvalid";
 
 const verifyUnpublishedAccess = asyncHandler(async function (req, res, next) {
   // Get post id.
   const { postId } = req.params;
-  // check if valid req.
-  if (mongoose.isValidObjectId(postId) === false)
+  // check if invalid Id
+  if (verifyIdInvalid(postId))
     return res.status(404).json({ message: "Post not found" });
   // Fetch post.
   const post = await Post.findById(postId).exec();

@@ -1,11 +1,11 @@
 import Post from "../models/post";
 import Comment from "../models/comment";
 import asyncHandler from "express-async-handler";
-import mongoose from "mongoose";
 import verifyUnpublishedAccess from "../assists/middlewares/verifyUnpublishedAccess";
 import verifyIfAuthor from "../assists/middlewares/verifyIfAuthor";
 import validate from "../assists/middlewares/validate";
 import checkValidation from "../assists/middlewares/checkValidation";
+import verifyIdInvalid from "../assists/functions/verifyIdInvalid";
 
 const postController = {
   // Middleware for getting all blog posts.
@@ -112,8 +112,8 @@ const postController = {
     asyncHandler(async function (req, res, next) {
       const { postId } = req.params;
 
-      // Check if valid mongoose id.
-      if (mongoose.isValidObjectId(postId) === false) {
+      // Check if valid id.
+      if (verifyIdInvalid(postId)) {
         res.status(404).send("Post not found.");
         return;
       }
@@ -165,8 +165,11 @@ const postController = {
     verifyIfAuthor,
     asyncHandler(async function (req, res, next) {
       const { postId } = req.params;
-      // Verify if correct id.
-      if (mongoose.isValidObjectId(postId)) {
+      // Verify if invalid Id
+      if (verifyIdInvalid(postId)) {
+        // Send a not found error.
+        res.status(404).json({ message: "Post not found." });
+      } else {
         // Fetch and delete blog post.
         const deletedPost = await Post.findByIdAndDelete(postId).exec();
         if (deletedPost) {
@@ -178,9 +181,6 @@ const postController = {
           // Send a not found error.
           res.status(404).json({ message: "Post not found." });
         }
-      } else {
-        // Send a not found error.
-        res.status(404).json({ message: "Post not found." });
       }
     }),
   ],
@@ -208,6 +208,12 @@ const postController = {
       }
     }),
   ],
+
+  // Handle create comment for the specified post.
+
+  // Handle edit comment for the specified post.
+
+  // Handle delete comment for the specified post.
 };
 
 export default postController;
