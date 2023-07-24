@@ -68,6 +68,7 @@ const userController = {
       }
     }),
   ],
+
   // Middleware for user log in.
   userLogin: [
     // Validate and sanitize user input
@@ -97,8 +98,9 @@ const userController = {
             });
           }
         } as AuthenticateCallback)(req, res, next);
-      } else {
+
         // Send errors.
+      } else {
         validationErrors.array().forEach((err) => {
           const { msg } = err;
           errors.push({ error: { msg } });
@@ -118,22 +120,46 @@ const userController = {
         });
     } as Handler,
   ],
+
   // Middleware for fetching user info.
   userInfo: asyncHandler(async function (req, res, next) {
-    console.log(req.user);
     // Check if logged in user and if user id and parameters match.
     if (req.user && req.user._id.toString() === req.params.userId.toString()) {
       // Fetch data from database.
       const user = await User.findById(req.params.userId)
         .select("name isAuthor")
         .exec();
+
       // Send Data
       res.status(200).json(user);
-    } else {
+
       // Send error if user is not logged in and the Id does not match.
+    } else {
       res.status(401).send("Unauthorized Request");
     }
   }),
+
+  // Handle user log out req.
+  userLogOut: function (req, res, next) {
+    // If user is logged in.
+    if (req.user) {
+      const user = req.user;
+      // Log out user.
+      req.logout(function (err) {
+        // Handle error.
+        if (err) {
+          return next(err);
+
+          // Send a refresh status. after successful log out.
+        } else {
+          res.status(205).send(`${user.name} logged out.`);
+        }
+      });
+    } else {
+      // Send a no content status.
+      res.status(204).send();
+    }
+  } as Handler,
 };
 
 export default userController;
