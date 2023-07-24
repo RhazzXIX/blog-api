@@ -46,6 +46,11 @@ const validate = {
       .isLength({ min: 10 })
       .escape(),
   ],
+  comment: [
+    body("comment", "Comment should not be empty.")
+      .notEmpty()
+      .escape(),
+  ],
 };
 
 export default validate;
