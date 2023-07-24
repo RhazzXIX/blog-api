@@ -20,4 +20,7 @@ router.delete("/:postId", postController.deleteBlogPost);
 // GET all comments from a blog post.
 router.get("/:postId/comments", postController.blogPostComments);
 
+// POST req for creating comments.
+router.post("/:postId/comments", postController.createComment);
+
 export default router;

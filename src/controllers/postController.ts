@@ -6,6 +6,7 @@ import verifyIfAuthor from "../assists/middlewares/verifyIfAuthor";
 import validate from "../assists/middlewares/validate";
 import checkValidation from "../assists/middlewares/checkValidation";
 import verifyIdInvalid from "../assists/functions/verifyIdInvalid";
+import createHttpError from "http-errors";
 
 const postController = {
   // Middleware for getting all blog posts.
@@ -209,7 +210,59 @@ const postController = {
     }),
   ],
 
-  // Handle create comment for the specified post.
+  // Handle create comment POST req.
+  createComment: [
+    verifyUnpublishedAccess,
+    // Validate and sanitize.
+    ...validate.comment,
+    checkValidation,
+    asyncHandler(async function (req, res, next) {
+      // verify if user is logged in.
+      if (req.user) {
+        // Query blog post
+        const post = res.locals.post;
+        // send error if post not found.
+        if (post) {
+          // Create and save a comment if post is found.
+          const comment = new Comment({
+            text: req.body.comment,
+            commenter: req.user.id,
+            date: new Date(),
+            blogPost: post.id,
+          });
+          await comment
+            .save()
+
+            // Send the created comment is success
+            .then(async () => {
+              // Update total comments
+              const updatedTotalComments = new Post({
+                _id: post.id,
+                totalComments: post.totalComments + 1,
+              });
+              await Post.findByIdAndUpdate(
+                post.id,
+                updatedTotalComments,
+                {}
+              ).exec();
+              res.send(201).json(comment);
+            })
+
+            // Catch error if failure.
+            .catch(() => {
+              next(createHttpError(500, "Internal server error."));
+            });
+
+          // Send a post not found error.
+        } else {
+          res.status(404).send("Post not found.");
+        }
+        // Send forbidden if user is logged out.
+      } else {
+        res.status(403).send("Request forbidden.");
+      }
+    }),
+  ],
 
   // Handle edit comment for the specified post.
 
