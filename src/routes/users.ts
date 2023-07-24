@@ -8,4 +8,7 @@ router.post("/", userController.userSignUp);
 // API for user info
 router.get("/:userId", userController.userInfo);
 
+// API for delete user.
+router.delete('/:userId', userController.deleteUser)
+
 export default router;

@@ -4,6 +4,7 @@ import { ValidationError, body, validationResult } from "express-validator";
 import bcrypt from "bcryptjs";
 import passport, { AuthenticateCallback } from "passport";
 import { Handler } from "express";
+import verifyIdInvalid from "../assists/functions/verifyIdInvalid";
 
 const userController = {
   // Middleware for user sign-up.
@@ -160,6 +161,40 @@ const userController = {
       res.status(204).send();
     }
   } as Handler,
+
+  // Middleware for deleting a user.
+  deleteUser: asyncHandler(async function (req, res, next) {
+    // Get userId.
+    const { userId } = req.params;
+
+    // Verify if Id is invalid.
+    if (verifyIdInvalid(userId)) {
+      res.status(404).send("User not found.");
+      return;
+    }
+
+    // Check if Current user and requested user for deletion is the same.
+    if (req.user && req.user.id.toString() === userId.toString()) {
+      // Query database and delete
+      const deletedUser = await User.findByIdAndDelete(userId).exec();
+
+      if (deletedUser) {
+        // Inform Client if success.
+        res.status(205).send(`Deleted account ${deletedUser.name}`);
+      } else {
+        // Send not found if failure.
+        res.status(404).send("User not found.");
+      }
+
+      // Send an unauthorized error.if the user is logged in.
+    } else if (req.user) {
+      res.status(401).send("Request unauthorized.");
+
+      // Send a forbidden error if no user is not logged in.
+    } else {
+      res.status(403).send("Request forbidden.");
+    }
+  }),
 };
 
 export default userController;
