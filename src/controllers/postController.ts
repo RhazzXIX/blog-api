@@ -142,18 +142,16 @@ const postController = {
       });
 
       // Query database and update.
-      const updateBlogPost = await Post.findByIdAndUpdate(
-        postId,
-        blogPost,
-        {}
-      ).exec();
+      const updatedBlogPost = await Post.findByIdAndUpdate(postId, blogPost, {
+        new: true,
+      }).exec();
 
       // If blog post is found send info to client.
-      if (updateBlogPost) {
+      if (updatedBlogPost) {
         res.status(201).json({
-          id: updateBlogPost._id,
-          updateFrom: updateBlogPost.content,
-          updateTo: blogPost.content,
+          id: updatedBlogPost._id,
+          updateFrom: blogPost.content,
+          updateTo: updatedBlogPost.content,
         });
       } else {
         res.status(404).send("Blog post not found.");
@@ -240,11 +238,9 @@ const postController = {
                 _id: post.id,
                 totalComments: post.totalComments + 1,
               });
-              await Post.findByIdAndUpdate(
-                post.id,
-                updatedTotalComments,
-                {}
-              ).exec();
+              await Post.findByIdAndUpdate(post.id, updatedTotalComments, {
+                new: true,
+              }).exec();
               res.send(201).json(comment);
             })
 
@@ -265,6 +261,70 @@ const postController = {
   ],
 
   // Handle edit comment for the specified post.
+  editComment: [
+    verifyUnpublishedAccess,
+    // Validate and sanitize.
+    ...validate.comment,
+    checkValidation,
+    asyncHandler(async function (req, res, next) {
+      // Get comment Id.
+      const { commentId } = req.params;
+
+      // Check if valid id
+      if (verifyIdInvalid(commentId)) {
+        res.status(404).send("Comment not found.");
+      } else {
+        // If user is logged in.
+        if (req.user) {
+          // Get comment.
+          const oldComment = await Comment.findById(commentId).exec();
+
+          // If comment is found.
+          if (oldComment) {
+            // Check if the commenter is the same with the logged in user.
+            if (
+              req.user._id.toString() === oldComment.commenter._id.toString()
+            ) {
+              // Create new comment.
+              const comment = new Comment({
+                _id: oldComment._id,
+                text: req.body.comment,
+              });
+
+              // Edit previous comment.
+              const updatedComment = await Comment.findByIdAndUpdate(
+                oldComment._id,
+                comment,
+                { new: true }
+              ).exec();
+
+              if (updatedComment) {
+                // Send details.
+                res.status(200).json({
+                  id: comment._id,
+                  updatedFrom: oldComment.text,
+                  updatedTo: updatedComment.text,
+                });
+              } else {
+                res.status(404).send("Comment not found.");
+              }
+
+              // Send Unauthorized request.
+            } else {
+              res.send(401).send("Request unauthorized.");
+            }
+            // Send a not found comment.
+          } else {
+            res.status(404).send("Comment not found.");
+          }
+
+          // Send forbidden if user is logged out.
+        } else {
+          res.status(403).send("Request forbidden.");
+        }
+      }
+    }),
+  ],
 
   // Handle delete comment for the specified post.
 };

@@ -23,4 +23,7 @@ router.get("/:postId/comments", postController.blogPostComments);
 // POST req for creating comments.
 router.post("/:postId/comments", postController.createComment);
 
+// PUT req for updating comments.
+router.put("/:postId/comments/:commentId", postController.editComment);
+
 export default router;
