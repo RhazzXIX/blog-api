@@ -17,13 +17,16 @@ router.put("/:postId", postController.updateBlogPost);
 // DELETE a single post..
 router.delete("/:postId", postController.deleteBlogPost);
 
-// GET all comments from a blog post.
+// GET all comments of a blog post.
 router.get("/:postId/comments", postController.blogPostComments);
 
-// POST req for creating comments.
+// POST comments.
 router.post("/:postId/comments", postController.createComment);
 
-// PUT req for updating comments.
+// PUT/update comments.
 router.put("/:postId/comments/:commentId", postController.editComment);
+
+// DELETE a comment of a blog post.
+router.delete("/:postId/comments/:commentId", postController.deleteComment);
 
 export default router;

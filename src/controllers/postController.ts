@@ -233,10 +233,13 @@ const postController = {
 
             // Send the created comment is success
             .then(async () => {
+              const allComments = await Comment.find({
+                blogPost: post._id,
+              }).exec();
               // Update total comments
               const updatedTotalComments = new Post({
-                _id: post.id,
-                totalComments: post.totalComments + 1,
+                _id: post._id,
+                totalComments: allComments.length,
               });
               await Post.findByIdAndUpdate(post.id, updatedTotalComments, {
                 new: true,
@@ -313,6 +316,7 @@ const postController = {
             } else {
               res.send(401).send("Request unauthorized.");
             }
+
             // Send a not found comment.
           } else {
             res.status(404).send("Comment not found.");
@@ -327,6 +331,65 @@ const postController = {
   ],
 
   // Handle delete comment for the specified post.
+  deleteComment: [
+    verifyUnpublishedAccess,
+    asyncHandler(async function (req, res, next) {
+      const { commentId } = req.params;
+
+      // Return comment not found if invalid Id.
+      if (verifyIdInvalid(commentId)) {
+        res.status(404).send("Comment not found.");
+        return;
+      }
+
+      // Check if user is logged in.
+      if (req.user) {
+        const comment = await Comment.findById(commentId).exec();
+
+        // Check if comment is found.
+        if (comment) {
+          // Check if the logged in user and the commenter is the same.
+          if (req.user._id.toString() === comment.commenter._id.toString()) {
+            const post = res.locals.post;
+            // Delete the comment.
+            const deletedComment = await Comment.findByIdAndDelete(
+              commentId
+            ).exec();
+            if (deletedComment) {
+              // Get total comments of the post.
+              const totalComments = await Comment.find({
+                blogPost: post._id,
+              }).exec();
+              const postTotalComments = new Post({
+                _id: post._id,
+                totalComments: totalComments.length,
+              });
+
+              // Update Blog Post comment.
+              await Post.findByIdAndUpdate(post._id, postTotalComments, {
+                new: true,
+              }).exec();
+
+              // Send success.
+              res.status(200).send("Comment deleted.");
+            } else {
+              // Send error.
+              res.status(500).send("Failed to delete comment.");
+            }
+          } else {
+            // Send req unauthorize.
+            res.status(401).send("Request Unauthorize");
+          }
+        } else {
+          // Send a comment not found.
+          res.status(404).send("Comment not found.");
+        }
+      } else {
+        // Send forbidden if user is not logged in.
+        res.status(403).send("Request Forbidden.");
+      }
+    }),
+  ],
 };
 
 export default postController;
