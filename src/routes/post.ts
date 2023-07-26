@@ -14,6 +14,9 @@ router.get("/:postId", postController.blogPost);
 // PUT/update a blog post.
 router.put("/:postId", postController.updateBlogPost);
 
+// PATCH/ publish/unpublish a post.
+router.patch("/:postId", postController.publishPost);
+
 // DELETE a single post..
 router.delete("/:postId", postController.deleteBlogPost);
 

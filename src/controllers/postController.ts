@@ -25,7 +25,7 @@ const postController = {
     } else {
       posts = await Post.find({ isPublished: true })
         .populate({ path: "author", select: "name" })
-        .sort({ publishedData: -1 })
+        .sort({ publishedDate: -1 })
         .lean()
         .exec();
     }
@@ -326,6 +326,43 @@ const postController = {
         } else {
           res.status(403).send("Request forbidden.");
         }
+      }
+    }),
+  ],
+
+  // Handle publish post req.
+  publishPost: [
+    verifyIfAuthor,
+    ...validate.publish,
+    checkValidation,
+    asyncHandler(async function (req, res, next) {
+      const { postId } = req.params;
+      // Check if valid id.
+      if (verifyIdInvalid(postId)) {
+        res.status(404).send("Post not found.");
+        return;
+      }
+      // Create a post with updated status
+      const updateForPost = new Post({
+        _id: postId,
+        isPublished: req.body.publish === "yes" ? true : false,
+      });
+
+      // update Post
+      const updatedPost = await Post.findByIdAndUpdate(postId, updateForPost, {
+        new: true,
+      }).exec();
+      // Check if the post is found.
+      if (updatedPost) {
+        // Send success status.
+        const postStatus =
+          updatedPost.isPublished === true
+            ? "Post published."
+            : "Post unpublished.";
+        res.status(200).send(postStatus);
+      } else {
+        // Return a not found error.
+        res.status(404).send("Post not found.");
       }
     }),
   ],
