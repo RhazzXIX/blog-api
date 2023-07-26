@@ -46,10 +46,19 @@ const validate = {
       .isLength({ min: 10 })
       .escape(),
   ],
-  comment: [
-    body("comment", "Comment should not be empty.")
-      .notEmpty()
+  publish: [
+    body("publish", 'Publish should have a "yes" or "no" value.')
+      .custom((value) => {
+        if (value === "yes" || value === "no") {
+          return true;
+        } else {
+          return false;
+        }
+      })
       .escape(),
+  ],
+  comment: [
+    body("comment", "Comment should not be empty.").notEmpty().escape(),
   ],
 };
 
