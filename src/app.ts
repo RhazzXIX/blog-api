@@ -1,10 +1,13 @@
 import createHttpError from "http-errors";
 import express, { ErrorRequestHandler } from "express";
-import path from "path";
 import session from "express-session";
 import logger from "morgan";
 import "dotenv/config";
 import mongoose, { ConnectOptions } from "mongoose";
+import helmet from "helmet";
+import compression from "compression";
+import { rateLimit } from "express-rate-limit";
+import cors from 'cors'
 import postRouter from "./routes/post";
 import usersRouter from "./routes/users";
 import sessionRouter from "./routes/session";
@@ -16,6 +19,7 @@ import "./config/authorization";
 const app = express();
 
 // Connect to database
+mongoose.set("strictQuery", false);
 const mongoDB = process.env.DB_URL;
 
 const main = async () => {
@@ -32,11 +36,20 @@ const main = async () => {
 
 main().catch((err) => console.log(err));
 
-// view engine setup
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "ejs");
-
 // App setup.
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 20,
+});
+
+app.use(cors({
+  origin:true,
+  optionsSuccessStatus:200
+}));
+
+app.use(limiter);
+app.use(compression());
+app.use(helmet());
 app.use(logger("dev"));
 app.use(express.json());
 
@@ -53,9 +66,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.urlencoded({ extended: false }));
 
-// Static files.
-app.use(express.static(path.join(__dirname, "public")));
-
 // Routes setup.
 app.use("/users", usersRouter);
 app.use("/posts", postRouter);
@@ -68,13 +78,13 @@ app.use(function (req, res, next) {
 
 // error handler
 app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render("error");
+  if (app.get("env") === "development") {
+    res.status(err.status).json({ message: err.message });
+  } else if (err.status === 404) {
+    res.status(err.status).json(err);
+  } else {
+    res.status(500).json("Internal server error.");
+  }
 } as ErrorRequestHandler);
 
 export default app;
