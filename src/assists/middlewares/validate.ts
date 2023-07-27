@@ -48,14 +48,14 @@ const validate = {
   ],
   publish: [
     body("publish", 'Publish should have a "yes" or "no" value.')
+      .escape()
       .custom((value) => {
         if (value === "yes" || value === "no") {
           return true;
         } else {
           return false;
         }
-      })
-      .escape(),
+      }),
   ],
   comment: [
     body("comment", "Comment should not be empty.").notEmpty().escape(),

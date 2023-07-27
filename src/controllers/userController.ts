@@ -1,6 +1,10 @@
 import asyncHandler from "express-async-handler";
 import User from "../models/user";
-import { ValidationError, body, validationResult } from "express-validator";
+import {
+  FieldValidationError,
+  body,
+  validationResult,
+} from "express-validator";
 import bcrypt from "bcryptjs";
 import passport, { AuthenticateCallback } from "passport";
 import { Handler } from "express";
@@ -13,7 +17,16 @@ const userController = {
     body("username", "Username should have at least 3 characters.")
       .trim()
       .isLength({ min: 3 })
-      .escape(),
+      .escape()
+      .custom(async (username) => {
+        // Check if user already exists.
+        const userExists = await User.findOne({ name: username }).exec();
+        if (userExists) {
+          throw new Error("User already exists");
+        } else {
+          return true;
+        }
+      }),
     body("password", "Password should have at least 5 characters.")
       .trim()
       .isLength({ min: 5 })
@@ -29,21 +42,23 @@ const userController = {
     asyncHandler(async (req, res, next) => {
       const { username, password } = req.body;
 
-      // Errors container.
-      const errors: ValidationError | { msg: string }[] = [];
-
       // Errors from validation.
-      const validationErrors = validationResult(req);
+      const errors = validationResult(req);
+      console.log(errors.mapped())
 
       // Add validation errors to container.
-      if (!validationErrors.isEmpty())
-        validationErrors.array().forEach((err) => errors.push(err));
-      // If user already used, add to error container.
-      const userExists = await User.findOne({ name: username }).exec();
-      if (userExists) errors.push({ msg: "User already exists." });
-      if (errors.length > 0) {
+      if (!errors.isEmpty()) {
         // Send validation errors
-        res.status(400).json(errors);
+        res.status(400).json(
+          errors.array().map((error) => {
+            const {
+              msg: message,
+              path: field,
+              value,
+            } = error as FieldValidationError;
+            return { message, value, field };
+          })
+        );
       } else {
         bcrypt.hash(password, 10, async function (err, hashedPassword) {
           // throw error from hashing.
@@ -82,16 +97,14 @@ const userController = {
       .isLength({ min: 5 })
       .escape(),
     asyncHandler(async function (req, res, next) {
-      const errors: { error: { msg: string } }[] = [];
-
       // Check for validation errors.
-      const validationErrors = validationResult(req);
+      const errors = validationResult(req);
 
       // Authenticate user if there are no validation errors.
-      if (validationErrors.isEmpty()) {
+      if (errors.isEmpty()) {
         await passport.authenticate("local", {}, function (err, user, info) {
           if (err) return next(err);
-          if (info) return res.json(info);
+          if (info) return res.status(400).json(info);
           if (user) {
             req.login(user, function (err) {
               if (err) return next(err);
@@ -102,11 +115,16 @@ const userController = {
 
         // Send errors.
       } else {
-        validationErrors.array().forEach((err) => {
-          const { msg } = err;
-          errors.push({ error: { msg } });
-        });
-        res.status(400).json(errors);
+        res.status(400).json(
+          errors.array().map((error) => {
+            const {
+              msg: message,
+              path: field,
+              value,
+            } = error as FieldValidationError;
+            return { message, value, field };
+          })
+        );
       }
     }),
     function (req, res, next) {
