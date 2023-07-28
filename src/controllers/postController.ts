@@ -7,8 +7,9 @@ import validate from "../assists/middlewares/validate";
 import checkValidation from "../assists/middlewares/checkValidation";
 import verifyIdInvalid from "../assists/functions/verifyIdInvalid";
 import createHttpError from "http-errors";
-import fs from "fs";
 import uploadImg from "../assists/middlewares/uploadImg";
+import deleteImagesFromLocal from "../assists/functions/deleteImagesFromLocal";
+import createPostContent from "../assists/functions/createPostContent";
 
 // Image header updload setup.
 const headerImgUpload = uploadImg.fields([
@@ -85,28 +86,8 @@ const postController = {
       const files = req.files as {
         [fieldname: string]: Express.Multer.File[];
       };
-      // Container for content
-      const content: IPostContent[] = [];
-      // Loop at the req.bod
-      for (let i = 1; i <= 4; i++) {
-        // Check if there are entries
-        if (req.body[`title${i}`]) {
-          const headerImg = files[`headerImg${i}`]
-            ? {
-                data: fs.readFileSync(
-                  "data/uploads/" + files[`headerImg${1}`][0].filename
-                ),
-                contentType: files[`headerImg${1}`][0].mimetype,
-              }
-            : undefined;
-          // Push entries to content for saving to database.
-          content.push({
-            headerImg,
-            title: req.body[`title${i}`],
-            text: req.body[`body${i}`],
-          } as IPostContent);
-        }
-      }
+      // create Content.
+      const content = createPostContent(files, req);
 
       // Create Blog post.
       const blogPost = new Post({
@@ -125,26 +106,14 @@ const postController = {
             path: "author",
             select: "name",
           });
-          Object.keys(files).forEach((key) => {
-            fs.unlink(files[key][0].path, (err) => {
-              if (err) {
-                next(err);
-              }
-            });
-          });
+          deleteImagesFromLocal(files);
 
           // Send response if success.
           res.status(201).json(blogPost);
         })
         // If there are errors.
         .catch(async (err) => {
-          Object.keys(files).forEach((key) => {
-            fs.unlink(files[key][0].path, (err) => {
-              if (err) {
-                next(err);
-              }
-            });
-          });
+          deleteImagesFromLocal(files);
           // Delete the said post for preventing bloating the database.
           await Post.findByIdAndDelete(blogPost._id);
           next(err);
@@ -171,28 +140,8 @@ const postController = {
         [fieldname: string]: Express.Multer.File[];
       };
 
-      // Container for updated content
-      const updatedContent: IPostContent[] = [];
-
-      for (let i = 1; i <= 4; i++) {
-        // Check if there are entries
-        if (req.body[`title${i}`]) {
-          const headerImg = files[`headerImg${i}`]
-            ? {
-                data: fs.readFileSync(
-                  "data/uploads/" + files[`headerImg${1}`][0].filename
-                ),
-                contentType: files[`headerImg${1}`][0].mimetype,
-              }
-            : undefined;
-          // Push entries to content for saving to database.
-          updatedContent.push({
-            headerImg,
-            title: req.body[`title${i}`],
-            text: req.body[`body${i}`],
-          } as IPostContent);
-        }
-      }
+      // Create post content.
+      const updatedContent = createPostContent(files, req);
 
       // Create a document for updating post.
       const blogPost = new Post({
@@ -207,25 +156,10 @@ const postController = {
 
       // If blog post is found send info to client.
       if (updatedBlogPost) {
-        Object.keys(files).forEach((key) => {
-          fs.unlink(files[key][0].path, (err) => {
-            if (err) {
-              next(err);
-            }
-          });
-        });
-        res.status(201).json({
-          id: updatedBlogPost._id,
-          updateTo: updatedBlogPost.content,
-        });
+        deleteImagesFromLocal(files);
+        res.status(201).send("Post updated.");
       } else {
-        Object.keys(files).forEach((key) => {
-          fs.unlink(files[key][0].path, (err) => {
-            if (err) {
-              next(err);
-            }
-          });
-        });
+        deleteImagesFromLocal(files);
         res.status(404).send("Blog post not found.");
       }
     }),
@@ -362,7 +296,7 @@ const postController = {
             ) {
               // Create new comment.
               const comment = new Comment({
-                _id: oldComment._id,
+                ...oldComment,
                 text: req.body.comment,
               });
 
