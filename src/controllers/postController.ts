@@ -200,6 +200,7 @@ const postController = {
       // Fetch comments.
       const comments = await Comment.find({ blogPost: post._id })
         .populate({ path: "commenter", select: "name" })
+        .sort({ date: -1 })
         .lean()
         .exec();
 
@@ -298,6 +299,7 @@ const postController = {
               const comment = new Comment({
                 ...oldComment,
                 text: req.body.comment,
+                date: new Date(),
               });
 
               // Edit previous comment.
@@ -348,10 +350,13 @@ const postController = {
         res.status(404).send("Post not found.");
         return;
       }
+
+      const oldPost = await Post.findById(postId).lean().exec();
       // Create a post with updated status
       const updateForPost = new Post({
-        _id: postId,
+        ...oldPost,
         isPublished: req.body.publish === "yes" ? true : false,
+        publishedDate: oldPost?.isPublished === false ? new Date() : undefined,
       });
 
       // update Post
