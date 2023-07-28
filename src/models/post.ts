@@ -4,8 +4,8 @@ const Schema = mongoose.Schema;
 
 const postContentSchema = new Schema<IPostContent>({
   headerImg: {
-    type: Buffer,
-    required: false,
+    data: Buffer,
+    contentType: String,
   },
   title: {
     type: String,

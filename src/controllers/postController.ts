@@ -7,6 +7,28 @@ import validate from "../assists/middlewares/validate";
 import checkValidation from "../assists/middlewares/checkValidation";
 import verifyIdInvalid from "../assists/functions/verifyIdInvalid";
 import createHttpError from "http-errors";
+import fs from "fs";
+import uploadImg from "../assists/middlewares/uploadImg";
+
+// Image header updload setup.
+const headerImgUpload = uploadImg.fields([
+  {
+    name: "headerImg1",
+    maxCount: 1,
+  },
+  {
+    name: "headerImg2",
+    maxCount: 1,
+  },
+  {
+    name: "headerImg3",
+    maxCount: 1,
+  },
+  {
+    name: "headerImg4",
+    maxCount: 1,
+  },
+]);
 
 const postController = {
   // Middleware for getting all blog posts.
@@ -53,22 +75,33 @@ const postController = {
   // Middleware for creating a blog post.
   createBlogPost: [
     verifyIfAuthor,
+    // Handle imgHead uploads,
+    headerImgUpload,
     // Validate and sanitize.
     ...validate.post,
     checkValidation,
-
     // Handle Create blog post req.
     asyncHandler(async function (req, res, next) {
+      const files = req.files as {
+        [fieldname: string]: Express.Multer.File[];
+      };
       // Container for content
       const content: IPostContent[] = [];
-
-      // Loop at the req.body
+      // Loop at the req.bod
       for (let i = 1; i <= 4; i++) {
         // Check if there are entries
         if (req.body[`title${i}`]) {
+          const headerImg = files[`headerImg${i}`]
+            ? {
+                data: fs.readFileSync(
+                  "data/uploads/" + files[`headerImg${1}`][0].filename
+                ),
+                contentType: files[`headerImg${1}`][0].mimetype,
+              }
+            : undefined;
           // Push entries to content for saving to database.
           content.push({
-            headerImg: req.body[`headerImg${i}`] || undefined,
+            headerImg,
             title: req.body[`title${i}`],
             text: req.body[`body${i}`],
           } as IPostContent);
@@ -92,12 +125,26 @@ const postController = {
             path: "author",
             select: "name",
           });
+          Object.keys(files).forEach((key) => {
+            fs.unlink(files[key][0].path, (err) => {
+              if (err) {
+                next(err);
+              }
+            });
+          });
 
           // Send response if success.
           res.status(201).json(blogPost);
         })
         // If there are errors.
         .catch(async (err) => {
+          Object.keys(files).forEach((key) => {
+            fs.unlink(files[key][0].path, (err) => {
+              if (err) {
+                next(err);
+              }
+            });
+          });
           // Delete the said post for preventing bloating the database.
           await Post.findByIdAndDelete(blogPost._id);
           next(err);
@@ -107,6 +154,7 @@ const postController = {
   // Update a blog post.
   updateBlogPost: [
     verifyIfAuthor,
+    headerImgUpload,
     ...validate.post,
     checkValidation,
     // Handle Update blog post request.
@@ -119,16 +167,27 @@ const postController = {
         return;
       }
 
+      const files = req.files as {
+        [fieldname: string]: Express.Multer.File[];
+      };
+
       // Container for updated content
       const updatedContent: IPostContent[] = [];
 
-      // Loop at the req.body
       for (let i = 1; i <= 4; i++) {
         // Check if there are entries
         if (req.body[`title${i}`]) {
-          // Push entries for saving to database.
+          const headerImg = files[`headerImg${i}`]
+            ? {
+                data: fs.readFileSync(
+                  "data/uploads/" + files[`headerImg${1}`][0].filename
+                ),
+                contentType: files[`headerImg${1}`][0].mimetype,
+              }
+            : undefined;
+          // Push entries to content for saving to database.
           updatedContent.push({
-            headerImg: req.body[`headerImg${i}`] || undefined,
+            headerImg,
             title: req.body[`title${i}`],
             text: req.body[`body${i}`],
           } as IPostContent);
@@ -148,12 +207,25 @@ const postController = {
 
       // If blog post is found send info to client.
       if (updatedBlogPost) {
+        Object.keys(files).forEach((key) => {
+          fs.unlink(files[key][0].path, (err) => {
+            if (err) {
+              next(err);
+            }
+          });
+        });
         res.status(201).json({
           id: updatedBlogPost._id,
-          updateFrom: blogPost.content,
           updateTo: updatedBlogPost.content,
         });
       } else {
+        Object.keys(files).forEach((key) => {
+          fs.unlink(files[key][0].path, (err) => {
+            if (err) {
+              next(err);
+            }
+          });
+        });
         res.status(404).send("Blog post not found.");
       }
     }),

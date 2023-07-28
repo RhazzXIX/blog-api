@@ -10,7 +10,7 @@ declare global {
     email: string;
   }
   interface IPostContent extends Document {
-    headerImg?: Buffer;
+    headerImg?: { data: Buffer; contentType: string };
     title: string;
     text: string;
   }
