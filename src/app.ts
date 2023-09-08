@@ -43,8 +43,9 @@ const limiter = rateLimit({
 });
 
 app.use(cors({
-  origin:true,
-  optionsSuccessStatus:200
+  origin: true,
+  optionsSuccessStatus: 200,
+  credentials: true,
 }));
 
 app.use(limiter);
