@@ -42,8 +42,12 @@ const limiter = rateLimit({
   max: 20,
 });
 
+app.enable('trust proxy')
+
 app.use(cors({
-  origin: true,
+  origin: [
+    'http://localhost:3000'
+  ],
   optionsSuccessStatus: 200,
   credentials: true,
 }));
